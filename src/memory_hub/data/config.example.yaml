@@ -1,0 +1,55 @@
+# 复制为 config.yaml 后按本机修改。
+# 路径占位：${VAR}、%VAR%（Windows）、~/ 用户目录；glob 可用 **
+
+hub_data_dir: ./hub_data
+
+# 全局默认（各源可覆盖）
+defaults:
+  min_body_chars: 20
+  # 解析：auto | markdown | json | text
+  parser: auto
+  # OpenClaw 日记等多 ## 文件可设为 true，一段一节入库
+  split_level2_headings: false
+  exclude_globs:
+    - "**/.git/**"
+    - "**/node_modules/**"
+
+claude:
+  enabled: true
+  glob_paths:
+    - "${APPDATA}/Claude/local-agent-mode-sessions/**/memory/**/*.md"
+    - "${APPDATA}/Claude/**/CLAUDE.md"
+  # 可选：整目录扫描（比长 glob 更稳，版本升级目录结构变了仍能扫到）
+  # scan_dirs:
+  #   - path: "${APPDATA}/Claude"
+  #     recursive: true
+  #     extensions: [".md", ".mdc"]
+
+codex:
+  enabled: true
+  glob_paths:
+    - "~/.codex/memories/**/*.md"
+    - "~/.codex/memories/**/*.json"
+
+opencode:
+  enabled: true
+  glob_paths:
+    - "~/.config/opencode/memory/**/*.md"
+    # - "D:/your/project/.opencode/memory/**/*.md"
+
+openclaw:
+  enabled: true
+  # 日记通常是「单日一文件 + 多个 ##」，建议仅对 openclaw 打开分段
+  split_level2_headings: true
+  glob_paths:
+    - "D:/your/workspace/memory/**/*.md"
+    - "D:/your/workspace/MEMORY.md"
+  # 也可用显式文件（避免 glob 差异）
+  # files:
+  #   - "D:/your/workspace/MEMORY.md"
+
+export:
+  for_claude: ./hub_data/export/for_claude
+  for_codex: ./hub_data/export/for_codex
+  for_opencode: ./hub_data/export/for_opencode
+  for_openclaw: ./hub_data/export/for_openclaw

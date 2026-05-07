@@ -1,0 +1,3 @@
+# 与 pyproject.toml 对齐；仅运行工具时：pip install -e .
+PyYAML>=6.0.1
+# 测试：pip install -e ".[dev]"
