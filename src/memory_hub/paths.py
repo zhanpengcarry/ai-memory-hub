@@ -3,6 +3,7 @@ from __future__ import annotations
 import glob
 import os
 import re
+from fnmatch import fnmatch
 from pathlib import Path
 
 
@@ -38,8 +39,6 @@ def resolve_relative(p: str, hub_root: Path) -> Path:
 
 def path_excluded(path: Path, patterns: list[str]) -> bool:
     """排除规则：`pathlib.Path.match`（支持 `**`）优先，其次对文件名做 `fnmatch`。"""
-    from fnmatch import fnmatch
-
     for pat in patterns:
         pat = pat.strip().replace("\\", "/")
         if not pat:

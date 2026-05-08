@@ -7,6 +7,8 @@ from memory_hub.io_util import read_text_flexible
 from memory_hub.models import MemoryEntry, normalize_body, utc_now_iso
 from memory_hub.paths import collect_paths_for_block
 
+from memory_hub.constants import MAX_PARSE_ERRORS_RECORDED
+
 _JSON_BODY_KEYS = (
     "body",
     "content",
@@ -53,7 +55,8 @@ def collect_from_source(
             )
         except Exception as e:
             if file_errors is not None:
-                file_errors.append((source_name, str(path), f"{type(e).__name__}: {e}"))
+                if len(file_errors) < MAX_PARSE_ERRORS_RECORDED:
+                    file_errors.append((source_name, str(path), f"{type(e).__name__}: {e}"))
             else:
                 raise
     return entries

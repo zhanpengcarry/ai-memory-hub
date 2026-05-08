@@ -4,8 +4,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from memory_hub.collect import collect_from_source
+from memory_hub.constants import MAX_PARSE_ERRORS_RECORDED
 from memory_hub.export_targets import export_all
 from memory_hub.merge import merge_entries, save_pull_snapshot, write_hub_meta, write_merged_json, write_merged_markdown
+from memory_hub.models import MemoryEntry
 from memory_hub.sources import iter_source_blocks
 from memory_hub.util import load_yaml_config
 
@@ -36,11 +38,13 @@ def run_sync(
     hub_data.mkdir(parents=True, exist_ok=True)
 
     file_errors: list[tuple[str, str, str]] = []
-    all_entries = []
+    all_entries: list[MemoryEntry] = []
     per_source_count: dict[str, int] = {}
 
     for name, block in iter_source_blocks(cfg):
         if not block.get("enabled", True):
+            per_source_count[name] = 0
+            save_pull_snapshot(name, hub_data / "snapshots" / f"{name}.json", [])
             continue
         items = collect_from_source(name, block, hub_root, defaults=defaults, file_errors=file_errors)
         per_source_count[name] = len(items)
@@ -71,6 +75,8 @@ def run_sync(
         print(f"数据目录: {hub_data}")
         if file_errors:
             print(f"解析警告：{len(file_errors)} 个文件失败（可用 --verbose 查看）")
+            if len(file_errors) >= MAX_PARSE_ERRORS_RECORDED:
+                print(f"  （已达记录上限 {MAX_PARSE_ERRORS_RECORDED}，后续失败未列出。）")
             if verbose:
                 for src, path, msg in file_errors[:30]:
                     print(f"  [{src}] {path}\n    {msg}")

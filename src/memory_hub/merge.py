@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from memory_hub.models import MemoryEntry, normalize_body, utc_now_iso
+from memory_hub.util import write_text
 
 
 def merge_entries(entries: list[MemoryEntry]) -> list[dict]:
@@ -70,14 +71,14 @@ def stable_merged_id(sources: set[str], normalized_body: str) -> str:
 
 SCHEMA_VERSION = 1
 
+_JSON_KW = {"ensure_ascii": False, "indent": 2, "default": str}
+
 
 def write_merged_json(path: Path, merged: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_text(path, json.dumps(merged, **_JSON_KW))
 
 
 def write_hub_meta(path: Path, *, entry_count: int, merged_count: int, sources: dict[str, int]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     meta = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": utc_now_iso(),
@@ -85,7 +86,7 @@ def write_hub_meta(path: Path, *, entry_count: int, merged_count: int, sources: 
         "merged_count": merged_count,
         "sources": sources,
     }
-    path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_text(path, json.dumps(meta, **_JSON_KW))
 
 
 def write_merged_markdown(path: Path, merged: list[dict]) -> None:
@@ -105,11 +106,9 @@ def write_merged_markdown(path: Path, merged: list[dict]) -> None:
         lines.append("")
         lines.append("---")
         lines.append("")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    write_text(path, "\n".join(lines).rstrip() + "\n")
 
 
 def save_pull_snapshot(source: str, path: Path, entries: list[MemoryEntry]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = [e.to_dict() for e in entries]
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_text(path, json.dumps(payload, **_JSON_KW))

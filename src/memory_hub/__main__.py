@@ -15,6 +15,13 @@ from memory_hub.sources import iter_source_blocks
 from memory_hub.util import load_yaml_config
 
 
+def positive_interval(s: str) -> float:
+    v = float(s)
+    if v <= 0 or v > 86400:
+        raise argparse.ArgumentTypeError("interval 须在 (0, 86400] 秒内（建议 1～300）")
+    return v
+
+
 def cmd_discover(config_path: Path) -> None:
     cfg = load_yaml_config(config_path)
     hub_root = config_path.parent.resolve()
@@ -155,9 +162,9 @@ def main() -> None:
     p_watch.add_argument(
         "-i",
         "--interval",
-        type=float,
+        type=positive_interval,
         default=3.0,
-        help="轮询间隔秒数（默认 3）",
+        help="轮询间隔秒数（默认 3，须为正数且不超过 86400）",
     )
 
     args = parser.parse_args()
