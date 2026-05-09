@@ -26,6 +26,7 @@ def merge_entries(entries: list[MemoryEntry]) -> list[dict]:
                 "updated_at": e.updated_at,
                 "provenance": [e.provenance] if e.provenance else [],
                 "extra": dict(e.extra),
+                "file_date": e.created_at if e.source == "openclaw" else None,
             }
         else:
             d["sources"].add(e.source)
@@ -42,6 +43,9 @@ def merge_entries(entries: list[MemoryEntry]) -> list[dict]:
                 d["updated_at"] = e.updated_at
             if e.created_at and (not d["created_at"] or e.created_at < d["created_at"]):
                 d["created_at"] = e.created_at
+            # 保留 OpenClaw 的 file_date
+            if e.source == "openclaw" and e.created_at:
+                d["file_date"] = e.created_at
     merged: list[dict] = []
     for v in buckets.values():
         merged.append(
@@ -57,7 +61,15 @@ def merge_entries(entries: list[MemoryEntry]) -> list[dict]:
                 "extra": v["extra"],
             }
         )
-    merged.sort(key=lambda x: x.get("updated_at") or "", reverse=True)
+    # 排序：优先使用 file_date（OpenClaw 日期），其次 updated_at
+    merged.sort(
+        key=lambda x: (
+            x.get("extra", {}).get("file_date") or 
+            x.get("created_at") or 
+            x.get("updated_at") or ""
+        ), 
+        reverse=True
+    )
     return merged
 
 
@@ -71,11 +83,9 @@ def stable_merged_id(sources: set[str], normalized_body: str) -> str:
 
 SCHEMA_VERSION = 1
 
-_JSON_KW = {"ensure_ascii": False, "indent": 2, "default": str}
-
 
 def write_merged_json(path: Path, merged: list[dict]) -> None:
-    write_text(path, json.dumps(merged, **_JSON_KW))
+    write_text(path, json.dumps(merged, ensure_ascii=False, indent=2, default=str))
 
 
 def write_hub_meta(path: Path, *, entry_count: int, merged_count: int, sources: dict[str, int]) -> None:
@@ -86,7 +96,7 @@ def write_hub_meta(path: Path, *, entry_count: int, merged_count: int, sources: 
         "merged_count": merged_count,
         "sources": sources,
     }
-    write_text(path, json.dumps(meta, **_JSON_KW))
+    write_text(path, json.dumps(meta, ensure_ascii=False, indent=2, default=str))
 
 
 def write_merged_markdown(path: Path, merged: list[dict]) -> None:
@@ -111,4 +121,4 @@ def write_merged_markdown(path: Path, merged: list[dict]) -> None:
 
 def save_pull_snapshot(source: str, path: Path, entries: list[MemoryEntry]) -> None:
     payload = [e.to_dict() for e in entries]
-    write_text(path, json.dumps(payload, **_JSON_KW))
+    write_text(path, json.dumps(payload, ensure_ascii=False, indent=2, default=str))

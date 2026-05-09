@@ -11,7 +11,12 @@ requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0.1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
 
 [project.scripts]
 memory-hub = "memory_hub.__main__:main"
@@ -28,3 +33,43 @@ memory_hub = ["data/*.yaml"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--cov=memory_hub --cov-report=term-missing"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "RUF001", # ambiguous unicode chars (Chinese text is intentional)
+    "RUF002", # ambiguous unicode in docstrings (Chinese text is intentional)
+    "RUF003", # ambiguous unicode in comments (Chinese text is intentional)
+    "TC001",  # move application imports into type-checking blocks
+    "TC003",  # move stdlib imports into type-checking blocks
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["memory_hub"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true

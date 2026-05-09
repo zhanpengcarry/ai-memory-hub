@@ -6,31 +6,56 @@ import re
 from fnmatch import fnmatch
 from pathlib import Path
 
+# Pattern for %VAR% environment variables (Windows style)
+_PCT_VAR_RE = re.compile(r"%([^%]+)%")
+
+# Pattern for ${VAR} environment variables (Unix style)
+_BRACE_VAR_RE = re.compile(r"\$\{([^}]+)\}")
+
+# Default file extensions for directory scanning
+DEFAULT_SCAN_EXTENSIONS = [".md", ".mdc", ".txt", ".markdown", ".json"]
+
 
 def expand_path_str(s: str) -> str:
-    """展开路径占位符，提高跨平台与多工具文档惯例的兼容性。
+    """Expand path placeholders for cross-platform compatibility.
 
-    支持：`${VAR}`、`%VAR%`（Windows 常见）、`~/` 用户目录、正斜杠（规范化后适配 OS）。
+    Supports:
+    - ${VAR}: Unix-style environment variables
+    - %VAR%: Windows-style environment variables
+    - ~/: User home directory
+
+    Args:
+        s: Path string with potential placeholders
+
+    Returns:
+        Expanded and normalized path string
     """
 
-    def pct_repl(m: re.Match[str]) -> str:
+    def _env_repl(m: re.Match[str]) -> str:
         key = m.group(1)
         return os.environ.get(key, m.group(0))
 
-    def brace_repl(m: re.Match[str]) -> str:
-        key = m.group(1)
-        return os.environ.get(key, m.group(0))
-
-    out = re.sub(r"%([^%]+)%", pct_repl, s)
-    out = re.sub(r"\$\{([^}]+)\}", brace_repl, out)
+    out = _PCT_VAR_RE.sub(_env_repl, s)
+    out = _BRACE_VAR_RE.sub(_env_repl, out)
     out = out.strip()
+
     if out == "~" or out.startswith("~/") or out.startswith("~\\"):
         out = os.path.expanduser(out.replace("\\", "/").replace("/", os.sep))
+
     out = out.replace("/", os.sep)
     return os.path.normpath(out)
 
 
 def resolve_relative(p: str, hub_root: Path) -> Path:
+    """Resolve path relative to hub_root if not absolute.
+
+    Args:
+        p: Path string (may contain placeholders)
+        hub_root: Root directory for relative path resolution
+
+    Returns:
+        Resolved absolute Path
+    """
     path = Path(expand_path_str(p))
     if path.is_absolute():
         return path
@@ -38,7 +63,17 @@ def resolve_relative(p: str, hub_root: Path) -> Path:
 
 
 def path_excluded(path: Path, patterns: list[str]) -> bool:
-    """排除规则：`pathlib.Path.match`（支持 `**`）优先，其次对文件名做 `fnmatch`。"""
+    """Check if path matches any exclusion pattern.
+
+    Uses pathlib.Path.match (supports **) first, then fnmatch for filename.
+
+    Args:
+        path: Path to check
+        patterns: List of glob patterns to match against
+
+    Returns:
+        True if path should be excluded
+    """
     for pat in patterns:
         pat = pat.strip().replace("\\", "/")
         if not pat:
@@ -48,11 +83,23 @@ def path_excluded(path: Path, patterns: list[str]) -> bool:
                 return True
         except (ValueError, OSError):
             pass
-        posix_name = path.name
-        if "/" not in pat and ("*" in pat or "?" in pat or "[" in pat):
-            if fnmatch(posix_name, pat):
-                return True
+        # Fallback to fnmatch for simple filename patterns
+        if "/" not in pat and ("*" in pat or "?" in pat or "[" in pat) and fnmatch(path.name, pat):
+            return True
     return False
+
+
+def _normalize_extension(ext: str) -> str:
+    """Normalize file extension to lowercase with leading dot.
+
+    Args:
+        ext: Extension string (with or without leading dot)
+
+    Returns:
+        Normalized extension with leading dot
+    """
+    ext = ext.lower()
+    return ext if ext.startswith(".") else f".{ext}"
 
 
 def collect_paths_for_block(
@@ -61,7 +108,18 @@ def collect_paths_for_block(
     *,
     extra_exclude: list[str] | None = None,
 ) -> list[Path]:
-    """汇总 glob、显式文件、目录扫描三类来源，去重排序。"""
+    """Collect file paths from glob, explicit files, and directory scan sources.
+
+    Results are deduplicated and sorted.
+
+    Args:
+        block: Source configuration block
+        hub_root: Root directory for path resolution
+        extra_exclude: Additional exclusion patterns from defaults
+
+    Returns:
+        Sorted list of unique resolved file paths
+    """
     exclude = list(block.get("exclude_globs") or [])
     if extra_exclude:
         exclude.extend(extra_exclude)
@@ -83,11 +141,10 @@ def collect_paths_for_block(
         seen.add(r)
         out.append(r)
 
-    globs = list(block.get("glob_paths") or [])
-    for raw in globs:
+    # Process glob patterns
+    for raw in block.get("glob_paths") or []:
         p = expand_path_str(raw.strip())
-        path_try = Path(p)
-        if not path_try.is_absolute():
+        if not Path(p).is_absolute():
             p = str((hub_root / p).resolve())
         try:
             hits = glob.glob(p, recursive=True)
@@ -96,25 +153,27 @@ def collect_paths_for_block(
         for hit in hits:
             add(Path(hit))
 
+    # Process explicit files
     for f in block.get("files") or []:
         add(resolve_relative(str(f), hub_root))
 
-    default_exts = [".md", ".mdc", ".txt", ".markdown", ".json"]
-
+    # Process directory scans
     for item in block.get("scan_dirs") or []:
         if not isinstance(item, dict):
             continue
         root = resolve_relative(str(item.get("path", "")), hub_root)
         if not root.is_dir():
             continue
+
         recursive = item.get("recursive", True)
         exts = item.get("extensions")
+
         if exts is None:
-            want = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in default_exts}
+            want = {_normalize_extension(e) for e in DEFAULT_SCAN_EXTENSIONS}
         elif exts == []:
             want = set()
         else:
-            want = {e.lower() if str(e).startswith(".") else f".{str(e).lower()}" for e in exts}
+            want = {_normalize_extension(str(e)) for e in exts}
 
         it = root.rglob("*") if recursive else root.iterdir()
         for f in it:

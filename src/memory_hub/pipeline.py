@@ -71,7 +71,10 @@ def run_sync(
         export_all(merged, export_dirs)
 
     if not quiet:
-        print(f"完成：共 {len(all_entries)} 条原始片段，合并后 {len(merged)} 条。" + ("（dry-run：未写入 export）" if dry_run else ""))
+        print(
+            f"完成：共 {len(all_entries)} 条原始片段，合并后 {len(merged)} 条。"
+            + ("（dry-run：未写入 export）" if dry_run else "")
+        )
         print(f"数据目录: {hub_data}")
         if file_errors:
             print(f"解析警告：{len(file_errors)} 个文件失败（可用 --verbose 查看）")

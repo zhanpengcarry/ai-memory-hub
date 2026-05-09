@@ -10,6 +10,10 @@ defaults:
   parser: auto
   # OpenClaw 日记等多 ## 文件可设为 true，一段一节入库
   split_level2_headings: false
+  # 从文件名提取日期（支持 YYYY-MM-DD 格式）
+  extract_date_from_filename: false
+  # 从正文提取 #hashtag 标签
+  extract_hashtags: false
   exclude_globs:
     - "**/.git/**"
     - "**/node_modules/**"
@@ -41,6 +45,10 @@ openclaw:
   enabled: true
   # 日记通常是「单日一文件 + 多个 ##」，建议仅对 openclaw 打开分段
   split_level2_headings: true
+  # 从文件名提取日期（YYYY-MM-DD.md 格式）
+  extract_date_from_filename: true
+  # 从正文提取 #hashtag 标签
+  extract_hashtags: true
   glob_paths:
     - "D:/your/workspace/memory/**/*.md"
     - "D:/your/workspace/MEMORY.md"

@@ -21,7 +21,7 @@ def test_run_sync_minimal_config(tmp_path: Path):
             claude:
               enabled: true
               files:
-                - "{sample.as_posix().replace(chr(92), '/')}"
+                - "{sample.as_posix().replace(chr(92), "/")}"
             codex:
               enabled: false
             opencode:

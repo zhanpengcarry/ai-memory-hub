@@ -22,6 +22,7 @@
 | 多源采集 | 支持 `glob`、显式 `files`、目录 `scan_dirs` + 扩展名过滤 |
 | 路径兼容 | `${VAR}`、`%VAR%`、`~/`、`**` 递归 glob；全局与各源 `exclude_globs` |
 | 格式解析 | Markdown（含 YAML frontmatter）、JSON / NDJSON、可选按 `##` 切段（适合 OpenClaw 日记） |
+| OpenClaw 增强 | 自动从文件名提取日期、从正文提取 `#hashtag` 标签、智能拆分保留日期上下文 |
 | 合并去重 | 规范化正文 + Unicode NFC，合并 `sources` 与时间元数据 |
 | 安全导出 | 仅写入 `hub_data` 与 `export/` 下可读注入文件，**不覆盖**如 Codex 官方 memories 目录 |
 | 自动同步 | `watch` 基于文件 mtime/size 指纹轮询，变更后自动 `sync`（纯标准库定时，无额外依赖） |
@@ -129,6 +130,8 @@ memory-hub sync -c config.yaml
 | `min_body_chars` | 过短片段丢弃阈值 |
 | `parser` | `auto` / `markdown` / `json` / `text` |
 | `split_level2_headings` | 是否按二级标题拆成多条 |
+| `extract_date_from_filename` | 从文件名提取日期（支持 `YYYY-MM-DD` 格式） |
+| `extract_hashtags` | 从正文提取 `#hashtag` 标签 |
 | `exclude_globs` | 全局排除（如 `.git`、`node_modules`） |
 
 **每个源（`claude` / `codex` / `opencode` / `openclaw`）**
@@ -141,6 +144,7 @@ memory-hub sync -c config.yaml
 | `scan_dirs` | `{ path, recursive, extensions }` 树形扫描 |
 | `exclude_globs` | 仅针对该源的排除 |
 | `min_body_chars` / `parser` / `split_level2_headings` | 可覆盖 `defaults` |
+| `extract_date_from_filename` / `extract_hashtags` | 可覆盖 `defaults` |
 
 **`export`**：`for_claude`、`for_codex`、`for_opencode`、`for_openclaw` 四个输出目录，用于写入注入用 Markdown。
 

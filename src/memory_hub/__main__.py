@@ -83,7 +83,7 @@ def cmd_init(target_dir: Path, force: bool) -> None:
         if repo_example.is_file():
             raw = repo_example.read_bytes()
         else:
-            raise SystemExit("找不到打包内的 config.example.yaml，请从 GitHub/仓库手动复制。")
+            raise SystemExit("找不到打包内的 config.example.yaml，请从 GitHub/仓库手动复制。") from None
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(raw)
@@ -92,6 +92,7 @@ def cmd_init(target_dir: Path, force: bool) -> None:
 
 def cmd_watch(config_path: Path, *, interval: float, dry_run: bool, verbose: bool) -> None:
     print(f"[watch] 轮询间隔 {interval}s，按 Ctrl+C 退出")
+
     def tick(msg: str) -> None:
         r = run_sync(config_path, dry_run=dry_run, verbose=verbose, quiet=True)
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
