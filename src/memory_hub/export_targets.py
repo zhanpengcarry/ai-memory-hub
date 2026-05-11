@@ -17,6 +17,8 @@ def export_all(merged: list[dict], dirs: dict[str, str | Path]) -> None:
         write_text(Path(p) / "hub-import.md", _opencode_block(body))
     if p := dirs.get("for_openclaw"):
         write_text(Path(p) / "MEMORY.injection.md", _openclaw_wrapper(body))
+    if p := dirs.get("for_harness"):
+        write_text(Path(p) / "HUB_CONTEXT.md", _harness_wrapper(body))
 
 
 def _shared_markdown(merged: list[dict]) -> str:
@@ -44,3 +46,7 @@ def _opencode_block(inner: str) -> str:
 
 def _openclaw_wrapper(inner: str) -> str:
     return "<!-- 可合并进 OpenClaw MEMORY.md 或按需在会话中加载 -->\n\n## Hub 注入记忆\n\n" + inner + "\n"
+
+
+def _harness_wrapper(inner: str) -> str:
+    return "<!-- 供 Harness 相关工具引用的部署上下文 -->\n\n# Harness 部署上下文\n\n" + inner + "\n"

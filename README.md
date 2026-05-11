@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  将 <strong>Claude</strong>、<strong>Codex</strong>、<strong>OpenCode</strong>、<strong>OpenClaw</strong> 等平台产生的可移植记忆<br/>
+  将 <strong>Claude</strong>、<strong>Codex</strong>、<strong>OpenCode</strong>、<strong>OpenClaw</strong>、<strong>Harness</strong> 等平台产生的可移植记忆<br/>
   汇聚、去重、合并，并生成各端可安全引用的 Markdown — 不写坏厂商私有状态库。
 </p>
 
@@ -19,7 +19,7 @@
 
 | 能力 | 说明 |
 |------|------|
-| 多源采集 | 支持 `glob`、显式 `files`、目录 `scan_dirs` + 扩展名过滤 |
+| 多源采集 | 支持 `glob`、显式 `files`、目录 `scan_dirs` + 扩展名过滤；Harness 通过 API 拉取 |
 | 路径兼容 | `${VAR}`、`%VAR%`、`~/`、`**` 递归 glob；全局与各源 `exclude_globs` |
 | 格式解析 | Markdown（含 YAML frontmatter）、JSON / NDJSON、可选按 `##` 切段（适合 OpenClaw 日记） |
 | OpenClaw 增强 | 自动从文件名提取日期、从正文提取 `#hashtag` 标签、智能拆分保留日期上下文 |
@@ -41,6 +41,7 @@ flowchart LR
     B[Codex]
     C[OpenCode]
     D[OpenClaw]
+    E2[Harness API]
   end
   subgraph hub["Hub"]
     E[解析与规范化]
@@ -52,17 +53,20 @@ flowchart LR
     I[for_codex]
     J[for_opencode]
     K[for_openclaw]
+    L[for_harness]
   end
   A --> E
   B --> E
   C --> E
   D --> E
+  E2 --> E
   E --> F
   F --> G
   G --> H
   G --> I
   G --> J
   G --> K
+  G --> L
 ```
 
 ---
@@ -134,7 +138,7 @@ memory-hub sync -c config.yaml
 | `extract_hashtags` | 从正文提取 `#hashtag` 标签 |
 | `exclude_globs` | 全局排除（如 `.git`、`node_modules`） |
 
-**每个源（`claude` / `codex` / `opencode` / `openclaw`）**
+**每个文件型源（`claude` / `codex` / `opencode` / `openclaw`）**
 
 | 键 | 含义 |
 |----|------|
@@ -146,7 +150,20 @@ memory-hub sync -c config.yaml
 | `min_body_chars` / `parser` / `split_level2_headings` | 可覆盖 `defaults` |
 | `extract_date_from_filename` / `extract_hashtags` | 可覆盖 `defaults` |
 
-**`export`**：`for_claude`、`for_codex`、`for_opencode`、`for_openclaw` 四个输出目录，用于写入注入用 Markdown。
+**API 源（`harness`）**
+
+| 键 | 含义 |
+|----|------|
+| `enabled` | 是否启用（默认 `false`） |
+| `api_key` | API Token（支持 `${HARNESS_API_KEY}` 环境变量） |
+| `base_url` | Harness 地址（默认 `https://app.harness.io`） |
+| `account_identifier` | 账户 ID（必填） |
+| `org_identifier` / `project_identifier` | 可选过滤 |
+| `pipeline_identifier` | 指定 pipeline（可选） |
+| `status_filter` | 按状态过滤（如 `["Failed", "Success"]`） |
+| `limit` | 每次拉取条数上限（默认 50） |
+
+**`export`**：`for_claude`、`for_codex`、`for_opencode`、`for_openclaw`、`for_harness` 五个输出目录，用于写入注入用 Markdown。
 
 完整说明与架构见 **[DESIGN.md](DESIGN.md)**。根目录 **[config.example.yaml](config.example.yaml)** 与包内 `memory_hub/data/config.example.yaml` 内容一致，供对照编辑。
 

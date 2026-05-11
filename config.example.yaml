@@ -56,8 +56,23 @@ openclaw:
   # files:
   #   - "D:/your/workspace/MEMORY.md"
 
+# Harness DevOps 平台（API 源，需配置 API key）
+harness:
+  enabled: false
+  api_key: "${HARNESS_API_KEY}"        # 环境变量或直接写 token
+  base_url: "https://app.harness.io"   # 自托管时改为对应地址
+  account_identifier: ""               # 账户 ID（必填）
+  org_identifier: ""                   # 可选，留空则拉所有 org
+  project_identifier: ""               # 可选
+  pipeline_identifier: ""              # 可选，指定 pipeline
+  status_filter:                       # 可选，按状态过滤
+    - "Failed"
+    - "Success"
+  limit: 50                            # 每次拉取条数上限
+
 export:
   for_claude: ./hub_data/export/for_claude
   for_codex: ./hub_data/export/for_codex
   for_opencode: ./hub_data/export/for_opencode
   for_openclaw: ./hub_data/export/for_openclaw
+  for_harness: ./hub_data/export/for_harness

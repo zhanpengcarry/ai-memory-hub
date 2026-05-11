@@ -88,6 +88,12 @@ def collect_from_source(
     Returns:
         List of collected MemoryEntry instances
     """
+    # Harness 是 API 源，走独立采集路径
+    if source_name == "harness":
+        from memory_hub.harness_client import collect_harness_entries
+
+        return collect_harness_entries(block, file_errors=file_errors)
+
     defaults = defaults or {}
     min_body = int(block.get("min_body_chars", defaults.get("min_body_chars", 20)))
     global_exclude = list(defaults.get("exclude_globs") or [])

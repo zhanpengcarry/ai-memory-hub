@@ -7,4 +7,5 @@ def iter_source_blocks(cfg: dict) -> list[tuple[str, dict]]:
         ("codex", cfg.get("codex") or {}),
         ("opencode", cfg.get("opencode") or {}),
         ("openclaw", cfg.get("openclaw") or {}),
+        ("harness", cfg.get("harness") or {}),
     ]

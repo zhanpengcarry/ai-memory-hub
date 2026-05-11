@@ -10,6 +10,7 @@
 | Codex | `~/.codex/memories/`（官方以生成状态为主，不宜原样互拷） | **只读拉取摘要**；写回时生成独立文件供引用，避免破坏内部结构 |
 | OpenCode | `~/.config/opencode/memory/*.md`、项目 `.opencode/memory/*.md` | Frontmatter + Markdown；可与 Hub 块对齐 |
 | OpenClaw | 工作区内 `memory/YYYY-MM-DD.md`、`MEMORY.md` | 按日追加与长期记忆分离；Hub 可产出「注入块」 |
+| Harness | REST API（pipeline 执行记录） | API 源；通过 API key 认证，拉取部署历史转为 MemoryEntry |
 
 ## 2. 架构概览
 
@@ -27,7 +28,7 @@
 ## 3. 统一数据模型（MemoryEntry）
 
 - `id`：稳定哈希（来源 + 规范化正文）或显式 UUID。
-- `source`：`claude` | `codex` | `opencode` | `openclaw` | `manual`。
+- `source`：`claude` | `codex` | `opencode` | `openclaw` | `harness` | `manual`。
 - `title`：可选短标题。
 - `body`：Markdown 正文。
 - `tags`：字符串列表。

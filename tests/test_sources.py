@@ -8,12 +8,13 @@ class TestIterSourceBlocks:
 
     def test_empty_config(self):
         result = iter_source_blocks({})
-        assert len(result) == 4
+        assert len(result) == 5
         names = [name for name, _ in result]
         assert "claude" in names
         assert "codex" in names
         assert "opencode" in names
         assert "openclaw" in names
+        assert "harness" in names
 
     def test_with_config(self):
         cfg = {

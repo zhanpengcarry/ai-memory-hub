@@ -30,6 +30,9 @@ def cmd_discover(config_path: Path) -> None:
         if not block.get("enabled", True):
             print(f"[{name}] 已禁用")
             continue
+        if name == "harness":
+            _discover_harness(block)
+            continue
         paths = collect_paths_for_block(block, hub_root, extra_exclude=list(defaults.get("exclude_globs") or []))
         print(f"[{name}] 匹配 {len(paths)} 个文件")
         for p in paths[:50]:
@@ -51,6 +54,12 @@ def cmd_doctor(config_path: Path) -> int:
             print(f"[{name}] 已禁用")
             continue
         enabled_any = True
+        if name == "harness":
+            n = _doctor_harness(block)
+            if n == 0:
+                code = 1
+            total_files += n
+            continue
         paths = collect_paths_for_block(block, hub_root, extra_exclude=ex)
         n = len(paths)
         total_files += n
@@ -64,8 +73,52 @@ def cmd_doctor(config_path: Path) -> int:
     if total_files == 0:
         print("! 合计 0 个源文件，无法汇聚")
         return 1
-    print(f"合计 {total_files} 个源文件（仅计数，未解析内容）。配置可正常发现路径。")
+    print(f"合计 {total_files} 个源文件/记录（仅计数，未解析内容）。配置可正常发现路径。")
     return code
+
+
+def _discover_harness(block: dict) -> None:
+    """discover 子命令中展示 Harness API 连接信息。"""
+    api_key = block.get("api_key") or ""
+    if not api_key:
+        print("[harness] 未配置 api_key，跳过")
+        return
+    base_url = block.get("base_url") or "https://app.harness.io"
+    account_id = block.get("account_identifier") or ""
+    print(f"[harness] API 源: {base_url}")
+    print(f"  账户: {account_id or '（未指定）'}")
+    print(f"  组织: {block.get('org_identifier') or '（全部）'}")
+    print(f"  项目: {block.get('project_identifier') or '（全部）'}")
+    print(f"  Pipeline: {block.get('pipeline_identifier') or '（全部）'}")
+    print(f"  状态过滤: {block.get('status_filter') or '（全部）'}")
+    print(f"  拉取上限: {block.get('limit') or 50}")
+    print("  （API 源，sync 时实时拉取）")
+
+
+def _doctor_harness(block: dict) -> int:
+    """doctor 子命令中检查 Harness API 连通性。"""
+    api_key = block.get("api_key") or ""
+    if not api_key:
+        print("[harness] 未配置 api_key")
+        print("  ! 请配置 api_key 或设 enabled: false")
+        return 0
+    base_url = block.get("base_url") or "https://app.harness.io"
+    account_id = block.get("account_identifier") or ""
+    if not account_id:
+        print("[harness] 未配置 account_identifier")
+        print("  ! 请配置 account_identifier")
+        return 0
+    print(f"[harness] API 源: {base_url} (账户: {account_id})")
+    try:
+        from memory_hub.harness_client import HarnessClient
+
+        client = HarnessClient(api_key=api_key, base_url=base_url, account_identifier=account_id)
+        items = client.list_executions(limit=1)
+        print(f"  API 连接正常，示例返回 {len(items)} 条记录")
+        return 1
+    except Exception as e:
+        print(f"  ! API 连接失败: {e}")
+        return 0
 
 
 def cmd_init(target_dir: Path, force: bool) -> None:
